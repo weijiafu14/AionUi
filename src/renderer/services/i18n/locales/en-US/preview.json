@@ -100,5 +100,15 @@
     "inspectElement": "Inspect element",
     "inspectElementEnable": "Enable element inspector",
     "inspectElementDisable": "Disable element inspector"
+  },
+  "ppt": {
+    "loading": "Loading presentation...",
+    "converting": "Converting with LibreOffice...",
+    "fallbackHint": "Basic preview (LibreOffice not found)",
+    "slideCount": "{{current}} / {{total}}",
+    "prevSlide": "Previous",
+    "nextSlide": "Next",
+    "noContent": "This slide has no text content",
+    "viaLibreOffice": "via LibreOffice"
   }
 }

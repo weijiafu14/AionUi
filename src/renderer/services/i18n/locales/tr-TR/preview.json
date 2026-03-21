@@ -100,5 +100,15 @@
     "inspectElement": "Öğeyi İncele",
     "inspectElementEnable": "Öğe denetçisini etkinleştir",
     "inspectElementDisable": "Öğe denetçisini devre dışı bırak"
+  },
+  "ppt": {
+    "loading": "Sunum yükleniyor...",
+    "converting": "LibreOffice ile dönüştürülüyor...",
+    "fallbackHint": "Temel önizleme (LibreOffice bulunamadı)",
+    "slideCount": "{{current}} / {{total}}",
+    "prevSlide": "Önceki",
+    "nextSlide": "Sonraki",
+    "noContent": "Bu slaytda metin içeriği yok",
+    "viaLibreOffice": "via LibreOffice"
   }
 }

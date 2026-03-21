@@ -100,5 +100,15 @@
     "inspectElement": "檢查元素",
     "inspectElementEnable": "啟用元素檢查",
     "inspectElementDisable": "停用元素檢查"
+  },
+  "ppt": {
+    "loading": "正在載入簡報...",
+    "converting": "正在透過 LibreOffice 轉換...",
+    "fallbackHint": "基本預覽（未偵測到 LibreOffice）",
+    "slideCount": "{{current}} / {{total}}",
+    "prevSlide": "上一張",
+    "nextSlide": "下一張",
+    "noContent": "此投影片無文字內容",
+    "viaLibreOffice": "via LibreOffice"
   }
 }

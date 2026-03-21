@@ -100,5 +100,15 @@
     "inspectElement": "要素を検証",
     "inspectElementEnable": "要素インスペクターを有効化",
     "inspectElementDisable": "要素インスペクターを無効化"
+  },
+  "ppt": {
+    "loading": "プレゼンテーションを読み込み中...",
+    "converting": "LibreOffice で変換中...",
+    "fallbackHint": "基本プレビュー（LibreOffice が見つかりません）",
+    "slideCount": "{{current}} / {{total}}",
+    "prevSlide": "前へ",
+    "nextSlide": "次へ",
+    "noContent": "このスライドにテキストはありません",
+    "viaLibreOffice": "via LibreOffice"
   }
 }

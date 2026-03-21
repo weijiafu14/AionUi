@@ -100,5 +100,15 @@
     "inspectElement": "审核元素",
     "inspectElementEnable": "开启审核元素",
     "inspectElementDisable": "关闭审核元素"
+  },
+  "ppt": {
+    "loading": "正在加载演示文稿...",
+    "converting": "正在通过 LibreOffice 转换...",
+    "fallbackHint": "基础预览（未检测到 LibreOffice）",
+    "slideCount": "{{current}} / {{total}}",
+    "prevSlide": "上一张",
+    "nextSlide": "下一张",
+    "noContent": "此幻灯片无文字内容",
+    "viaLibreOffice": "via LibreOffice"
   }
 }

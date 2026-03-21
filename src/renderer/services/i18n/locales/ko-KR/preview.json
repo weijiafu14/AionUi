@@ -100,5 +100,15 @@
     "inspectElement": "요소 검사",
     "inspectElementEnable": "요소 검사기 활성화",
     "inspectElementDisable": "요소 검사기 비활성화"
+  },
+  "ppt": {
+    "loading": "프레젠테이션 로딩 중...",
+    "converting": "LibreOffice로 변환 중...",
+    "fallbackHint": "기본 미리보기 (LibreOffice 없음)",
+    "slideCount": "{{current}} / {{total}}",
+    "prevSlide": "이전",
+    "nextSlide": "다음",
+    "noContent": "이 슬라이드에 텍스트가 없습니다",
+    "viaLibreOffice": "via LibreOffice"
   }
 }
