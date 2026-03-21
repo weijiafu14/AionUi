@@ -5,11 +5,11 @@
  */
 
 import { ipcBridge } from '@/common';
-import { usePreviewToolbarExtras } from '../../context/PreviewToolbarExtrasContext';
+import { usePreviewToolbarExtras } from '../../../context/PreviewToolbarExtrasContext';
 import { Button, Message } from '@arco-design/web-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import MarkdownPreview from './MarkdownViewer';
+import MarkdownPreview from '../MarkdownViewer';
 
 interface OfficeDocPreviewProps {
   /**
@@ -78,7 +78,10 @@ const OfficeDocPreview: React.FC<OfficeDocPreviewProps> = ({ filePath, docType, 
 
         // Use backend conversion service
         // Request conversion via unified document.convert IPC
-        const response = await ipcBridge.document.convert.invoke({ filePath, to: 'markdown' });
+        const response = await ipcBridge.document.convert.invoke({
+          filePath,
+          to: 'markdown',
+        });
 
         if (response.to !== 'markdown') {
           throw new Error(t('preview.errors.conversionFailed'));

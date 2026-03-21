@@ -6,7 +6,7 @@
 
 import { ipcBridge } from '@/common';
 import type { ExcelWorkbookData } from '@/common/types/conversion';
-import { usePreviewToolbarExtras } from '../../context/PreviewToolbarExtrasContext';
+import { usePreviewToolbarExtras } from '../../../context/PreviewToolbarExtrasContext';
 import { Button, Message } from '@arco-design/web-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -84,7 +84,10 @@ const ExcelPreview: React.FC<ExcelPreviewProps> = ({ filePath, hideToolbar = fal
       try {
         // 通过 IPC 调用主进程转换
         // 调用统一的 document.convert 将 Excel 转换为 JSON / Convert Excel to JSON via document.convert
-        const response = await ipcBridge.document.convert.invoke({ filePath, to: 'excel-json' });
+        const response = await ipcBridge.document.convert.invoke({
+          filePath,
+          to: 'excel-json',
+        });
 
         if (response.to !== 'excel-json') {
           throw new Error(t('preview.excel.convertFailed'));
@@ -302,7 +305,9 @@ const ExcelPreview: React.FC<ExcelPreviewProps> = ({ filePath, hideToolbar = fal
 
           <div className='flex items-center gap-8px'>
             <span className='text-12px text-t-secondary'>
-              {t('preview.excel.sheetCount', { count: excelData.sheets.length })}
+              {t('preview.excel.sheetCount', {
+                count: excelData.sheets.length,
+              })}
             </span>
             {filePath && (
               <Button
