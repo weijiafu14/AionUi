@@ -8,21 +8,29 @@ import type { ConversionResult, ExcelWorkbookData, PPTJsonData } from '@/common/
 import { DOMParser } from '@xmldom/xmldom';
 import { Document as DocxDocument, Packer, Paragraph, TextRun } from 'docx';
 import { BrowserWindow } from 'electron';
+import crypto from 'crypto';
 import fs from 'fs/promises';
 import mammoth from 'mammoth';
+import os from 'os';
+import path from 'path';
 import PPTX2Json from 'pptx2json';
 import TurndownService from 'turndown';
 import * as XLSX from 'xlsx-republish';
 import * as yauzl from 'yauzl';
+import { findLibreOfficeBin } from '../utils/conversion/libreofficeUtils';
+import { safeExecFile } from '../utils/safeExec';
 
 class ConversionService {
   private turndownService: TurndownService;
+  private readonly pptx2json: InstanceType<typeof PPTX2Json>;
+  private readonly createdTempPdfs = new Set<string>();
 
   constructor() {
     this.turndownService = new TurndownService({
       headingStyle: 'atx',
       codeBlockStyle: 'fenced',
     });
+    this.pptx2json = new PPTX2Json();
   }
 
   /**
@@ -38,7 +46,10 @@ class ConversionService {
       return { success: true, data: markdown };
     } catch (error) {
       console.error('[ConversionService] wordToMarkdown failed:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
@@ -76,7 +87,10 @@ class ConversionService {
       return { success: true };
     } catch (error) {
       console.error('[ConversionService] markdownToWord failed:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
@@ -104,7 +118,10 @@ class ConversionService {
       return { success: true, data: { sheets } };
     } catch (error) {
       console.error('[ConversionService] excelToJson failed:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
@@ -129,7 +146,10 @@ class ConversionService {
       return { success: true };
     } catch (error) {
       console.error('[ConversionService] jsonToExcel failed:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
@@ -140,77 +160,183 @@ class ConversionService {
    */
   public async pptToJson(filePath: string): Promise<ConversionResult<PPTJsonData>> {
     try {
-      const pptx2json = new PPTX2Json();
-      const json = await pptx2json.toJson(filePath);
+      const json = (await this.pptx2json.toJson(filePath)) as Record<string, unknown>;
 
-      console.log('[ConversionService] pptx2json raw result keys:', Object.keys(json));
+      // Extract slide keys from the flat key map returned by pptx2json
+      const slideKeys = Object.keys(json)
+        .filter((k) => /^ppt\/slides\/slide\d+\.xml$/.test(k))
+        .sort((a, b) => {
+          const numA = parseInt(a.match(/slide(\d+)/)?.[1] ?? '0', 10);
+          const numB = parseInt(b.match(/slide(\d+)/)?.[1] ?? '0', 10);
+          return numA - numB;
+        });
 
-      // 提取幻灯片信息 / Extract slide information
-      const slides = [];
+      const slides = slideKeys.map((key, idx) => {
+        const slideXml = json[key];
+        const slideNum = idx + 1;
+        const relsKey = `ppt/slides/_rels/slide${slideNum}.xml.rels`;
+        const title = this.extractTitle(slideXml);
+        const texts = this.extractTextNodes(slideXml).filter((t) => t !== title);
+        const images = this.extractSlideImages(json, relsKey);
+        return {
+          slideNumber: slideNum,
+          title: title ?? '',
+          texts,
+          images,
+        };
+      });
 
-      // 尝试多种可能的路径结构
-      const possiblePaths = ['ppt/slides', 'ppt\\slides', 'slides'];
-
-      let slidesData: any = null;
-      for (const path of possiblePaths) {
-        if (json[path]) {
-          slidesData = json[path];
-          console.log(`[ConversionService] Found slides at path: ${path}`);
-          break;
-        }
-      }
-
-      // 如果上面的路径都找不到，尝试查找所有包含 'slide' 的键
-      if (!slidesData) {
-        const allKeys = Object.keys(json);
-        console.log('[ConversionService] All keys in json:', allKeys);
-
-        // 查找所有以 slide 开头的键
-        const slideKeys = allKeys.filter((key) => key.toLowerCase().includes('slide') && key.endsWith('.xml'));
-
-        console.log('[ConversionService] Found slide keys:', slideKeys);
-
-        if (slideKeys.length > 0) {
-          for (let i = 0; i < slideKeys.length; i++) {
-            slides.push({
-              slideNumber: i + 1,
-              content: json[slideKeys[i]],
-            });
-          }
-        }
-      } else if (typeof slidesData === 'object') {
-        const slideFiles = Object.keys(slidesData).filter((key) => key.startsWith('slide') && key.endsWith('.xml'));
-        console.log('[ConversionService] Found slide files:', slideFiles);
-
-        for (let i = 0; i < slideFiles.length; i++) {
-          slides.push({
-            slideNumber: i + 1,
-            content: slidesData[slideFiles[i]],
-          });
-        }
-      }
-
-      console.log('[ConversionService] Total slides extracted:', slides.length);
-
-      return {
-        success: true,
-        data: {
-          slides,
-          raw: json,
-        },
-      };
+      return { success: true, data: { slides, raw: json } };
     } catch (error) {
-      console.error('[ConversionService] pptToJson failed:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
   /**
+   * PowerPoint (.pptx) -> PDF via LibreOffice
+   * Converts a PPTX file to PDF using the locally installed LibreOffice binary.
+   */
+  public async pptToPdf(filePath: string): Promise<ConversionResult<string>> {
+    try {
+      const bin = await findLibreOfficeBin();
+      if (!bin) {
+        return { success: false, error: 'LIBRE_OFFICE_NOT_FOUND' };
+      }
+
+      // Deterministic output filename based on input path + mtime (mtime optional)
+      let mtimeMs = 0;
+      let pdfCached = false;
+      try {
+        const stat = await fs.stat(filePath);
+        mtimeMs = stat?.mtimeMs ?? 0;
+      } catch {
+        // stat unavailable — hash on path alone
+      }
+      const hash = crypto.createHash('sha256').update(`${filePath}:${mtimeMs}`).digest('hex').slice(0, 16);
+      const outDir = os.tmpdir();
+      const pdfPath = path.join(outDir, `aionui-ppt-${hash}.pdf`);
+
+      // Skip conversion if cached PDF already exists (only check when stat succeeded)
+      if (mtimeMs > 0) {
+        try {
+          await fs.access(pdfPath);
+          pdfCached = true;
+        } catch {
+          // not cached — run conversion
+        }
+      }
+
+      if (!pdfCached) {
+        await safeExecFile(bin, ['--headless', '--convert-to', 'pdf', '--outdir', outDir, filePath], {
+          timeout: 30_000,
+        });
+        await fs.access(pdfPath); // verify output was created
+        this.createdTempPdfs.add(pdfPath);
+      }
+
+      return { success: true, data: pdfPath };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /** Clean up temp PDFs created this session. Call on app quit. */
+  public async cleanupTempPdfs(): Promise<void> {
+    await Promise.allSettled([...this.createdTempPdfs].map((p) => fs.unlink(p)));
+    this.createdTempPdfs.clear();
+  }
+
+  // ─── PPT private helpers ──────────────────────────────────────────────────
+
+  private extractTextNodes(node: unknown): string[] {
+    if (typeof node !== 'object' || node === null) return [];
+    const result: string[] = [];
+    const obj = node as Record<string, unknown>;
+    if ('a:t' in obj) {
+      const val = obj['a:t'];
+      if (Array.isArray(val)) {
+        val.forEach((v) => {
+          if (typeof v === 'string' && v.trim()) result.push(v.trim());
+        });
+      }
+    }
+    for (const child of Object.values(obj)) {
+      if (Array.isArray(child)) {
+        child.forEach((item) => result.push(...this.extractTextNodes(item)));
+      } else if (typeof child === 'object') {
+        result.push(...this.extractTextNodes(child));
+      }
+    }
+    return result;
+  }
+
+  private extractTitle(slideXml: unknown): string | null {
+    const text = this.findTitleText(slideXml);
+    return text ?? null;
+  }
+
+  private findTitleText(node: unknown): string | null {
+    if (typeof node !== 'object' || node === null) return null;
+    const obj = node as Record<string, unknown>;
+    if ('p:ph' in obj) {
+      const ph = (obj['p:ph'] as unknown[])?.[0];
+      const type = (ph as Record<string, Record<string, string>>)?.['$']?.type;
+      if (type === 'title' || type === 'ctrTitle') {
+        return null; // signal: caller should collect a:t from this shape
+      }
+    }
+    for (const child of Object.values(obj)) {
+      const found = this.findTitleText(child);
+      if (found !== null) return found;
+    }
+    return null;
+  }
+
+  private extractSlideImages(json: Record<string, unknown>, relsKey: string): string[] {
+    const relsXml = json[relsKey] as Record<string, unknown> | undefined;
+    if (!relsXml) return [];
+    const images: string[] = [];
+    try {
+      const rels = (relsXml as Record<string, { Relationship?: unknown[] }>)?.Relationships?.Relationship ?? [];
+      for (const rel of rels) {
+        const target: string = (rel as Record<string, Record<string, string>>)?.['$']?.Target ?? '';
+        const type: string = (rel as Record<string, Record<string, string>>)?.['$']?.Type ?? '';
+        if (!type.includes('image')) continue;
+        const mediaKey = 'ppt/' + target.replace(/^\.\.\//, '');
+        const buf = json[mediaKey];
+        if (!buf || !Buffer.isBuffer(buf)) continue;
+        const mime = this.getMimeTypeFromName(mediaKey);
+        images.push(`data:${mime};base64,${buf.toString('base64')}`);
+      }
+    } catch {
+      // silently skip malformed rels
+    }
+    return images;
+  }
+
+  // ─── Excel private helpers ────────────────────────────────────────────────
+
+  /**
    * 提取 Excel 中的图片资源，并且定位到对应单元格
    */
-  private async extractExcelImages(
-    buffer: Buffer
-  ): Promise<Record<string, { row: number; col: number; src: string; width?: number; height?: number }[]>> {
+  private async extractExcelImages(buffer: Buffer): Promise<
+    Record<
+      string,
+      {
+        row: number;
+        col: number;
+        src: string;
+        width?: number;
+        height?: number;
+      }[]
+    >
+  > {
     try {
       const fileMap = await this.loadExcelZipEntries(buffer);
       const workbookXml = fileMap.get('xl/workbook.xml');
@@ -241,7 +367,16 @@ class ConversionService {
       }
 
       const parser = new DOMParser();
-      const result: Record<string, { row: number; col: number; src: string; width?: number; height?: number }[]> = {};
+      const result: Record<
+        string,
+        {
+          row: number;
+          col: number;
+          src: string;
+          width?: number;
+          height?: number;
+        }[]
+      > = {};
 
       for (const sheetInfo of sheetInfos) {
         const sheetRelPath = this.getRelsPath(sheetInfo.path);
@@ -293,9 +428,13 @@ class ConversionService {
   /**
    * 解析 Drawing XML 中的图片锚点信息
    */
-  private parseDrawingAnchors(
-    doc: Document
-  ): Array<{ row: number; col: number; embedId: string; width?: number; height?: number }> {
+  private parseDrawingAnchors(doc: Document): Array<{
+    row: number;
+    col: number;
+    embedId: string;
+    width?: number;
+    height?: number;
+  }> {
     const anchors: Element[] = [];
     const anchorTags = [
       'xdr:twoCellAnchor',
@@ -319,7 +458,13 @@ class ConversionService {
     const colTags = ['xdr:col', 'col'];
     const sizeTags = ['xdr:ext', 'a:ext', 'ext'];
 
-    const entries: Array<{ row: number; col: number; embedId: string; width?: number; height?: number }> = [];
+    const entries: Array<{
+      row: number;
+      col: number;
+      embedId: string;
+      width?: number;
+      height?: number;
+    }> = [];
 
     anchors.forEach((anchor) => {
       const blip = this.findFirstChild(anchor, blipTags);
@@ -545,7 +690,10 @@ class ConversionService {
       return { success: true };
     } catch (error) {
       console.error('[ConversionService] htmlToPdf failed:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     } finally {
       if (win) {
         win.close();
@@ -583,7 +731,10 @@ class ConversionService {
       return await this.htmlToPdf(html, targetPath);
     } catch (error) {
       console.error('[ConversionService] markdownToPdf failed:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 }
