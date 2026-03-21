@@ -205,7 +205,7 @@ const OfficeDocPreview: React.FC<OfficeDocPreviewProps> = ({ filePath, docType, 
 
       {/* Toolbar */}
       {!usePortalToolbar && !hideToolbar && (
-        <div className='flex items-center justify-between h-40px px-12px bg-bg-2 flex-shrink-0'>
+        <div className='flex items-center justify-between h-40px px-12px bg-bg-2 shrink-0'>
           <div className='flex items-center gap-8px'>
             <span className='text-13px text-t-secondary'>📄 {t('preview.word.title')}</span>
           </div>
