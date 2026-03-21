@@ -53,16 +53,16 @@ The renderer calls `ppt-pdf` first. Any failure (including `LIBRE_OFFICE_NOT_FOU
 Exports one function:
 
 ```ts
-export async function findLibreOfficeBin(): Promise<string | null>
+export async function findLibreOfficeBin(): Promise<string | null>;
 ```
 
 Checks the following paths in order and returns the first executable found, or `null`:
 
-| Platform | Paths checked |
-|----------|---------------|
-| macOS    | `/Applications/LibreOffice.app/Contents/MacOS/soffice`, `/usr/local/bin/soffice` |
+| Platform | Paths checked                                                                                                |
+| -------- | ------------------------------------------------------------------------------------------------------------ |
+| macOS    | `/Applications/LibreOffice.app/Contents/MacOS/soffice`, `/usr/local/bin/soffice`                             |
 | Windows  | `C:\Program Files\LibreOffice\program\soffice.exe`, `C:\Program Files (x86)\LibreOffice\program\soffice.exe` |
-| Linux    | `/usr/bin/soffice`, `/usr/local/bin/soffice`, `/snap/bin/libreoffice` |
+| Linux    | `/usr/bin/soffice`, `/usr/local/bin/soffice`, `/snap/bin/libreoffice`                                        |
 
 Result is cached in memory for the process lifetime (detection runs at most once).
 
@@ -92,13 +92,15 @@ The generated PDF path is an absolute `file://` path on the user's machine. The 
 ### 5. `conversionService.pptToJson(filePath)` (fix existing)
 
 Current issues:
+
 - Contains debug `console.log` statements — remove all.
 - Slide key detection uses nested path lookup that never matches the flat key map returned by pptx2json.
 
 Fix slide extraction:
+
 ```ts
 const slideKeys = Object.keys(json)
-  .filter(k => /^ppt\/slides\/slide\d+\.xml$/.test(k))
+  .filter((k) => /^ppt\/slides\/slide\d+\.xml$/.test(k))
   .sort((a, b) => {
     const numA = parseInt(a.match(/slide(\d+)/)?.[1] ?? '0', 10);
     const numB = parseInt(b.match(/slide(\d+)/)?.[1] ?? '0', 10);
@@ -107,6 +109,7 @@ const slideKeys = Object.keys(json)
 ```
 
 Add image extraction per slide:
+
 - Load `ppt/slides/_rels/slideN.xml.rels` from the same flat json map.
 - Resolve `r:embed` references to `ppt/media/*` entries (which are Buffers).
 - Convert to `data:<mime>;base64,<...>` strings.
@@ -120,8 +123,8 @@ Replace the opaque `content: any` with structured fields:
 export interface PPTSlideData {
   slideNumber: number;
   title: string;
-  texts: string[];   // body text paragraphs (excluding title)
-  images: string[];  // data URLs of embedded images
+  texts: string[]; // body text paragraphs (excluding title)
+  images: string[]; // data URLs of embedded images
 }
 ```
 
@@ -159,6 +162,7 @@ case 'ppt-pdf': {
 **Path:** `src/renderer/pages/conversation/Preview/components/viewers/PPTViewer.tsx`
 
 **Props:**
+
 ```ts
 interface PPTViewerProps {
   filePath?: string;
@@ -167,6 +171,7 @@ interface PPTViewerProps {
 ```
 
 **State machine:**
+
 ```
 idle
   -> loading (try ppt-pdf first)
@@ -177,6 +182,7 @@ idle
 ```
 
 **Fallback slide card layout (16:9 aspect ratio):**
+
 - Header bar: slide number badge (`3 / 10`), open-in-system Button (Arco `Button` component, not raw `<button>`)
 - Content area:
   - Title: `text-18px font-semibold text-t-primary mb-12px`
@@ -213,28 +219,28 @@ export { default as PPTViewer } from './PPTViewer';
 
 Add to `preview.json` in **all six locale directories** (`en-US`, `zh-CN`, `zh-TW`, `ja-JP`, `ko-KR`, `tr-TR`):
 
-| Key | en-US | zh-CN | zh-TW | ja-JP | ko-KR | tr-TR |
-|-----|-------|-------|-------|-------|-------|-------|
-| `ppt.loading` | Loading presentation... | 正在加载演示文稿... | 正在載入簡報... | プレゼンテーションを読み込み中... | 프레젠테이션 로딩 중... | Sunum yükleniyor... |
-| `ppt.converting` | Converting with LibreOffice... | 正在通过 LibreOffice 转换... | 正在透過 LibreOffice 轉換... | LibreOffice で変換中... | LibreOffice로 변환 중... | LibreOffice ile dönüştürülüyor... |
-| `ppt.fallbackHint` | Basic preview (LibreOffice not found) | 基础预览（未检测到 LibreOffice） | 基本預覽（未偵測到 LibreOffice） | 基本プレビュー（LibreOffice が見つかりません） | 기본 미리보기 (LibreOffice 없음) | Temel önizleme (LibreOffice bulunamadı) |
-| `ppt.slideCount` | `{{current}} / {{total}}` | `{{current}} / {{total}}` | `{{current}} / {{total}}` | `{{current}} / {{total}}` | `{{current}} / {{total}}` | `{{current}} / {{total}}` |
-| `ppt.prevSlide` | Previous | 上一张 | 上一張 | 前へ | 이전 | Önceki |
-| `ppt.nextSlide` | Next | 下一张 | 下一張 | 次へ | 다음 | Sonraki |
-| `ppt.noContent` | This slide has no text content | 此幻灯片无文字内容 | 此投影片無文字內容 | このスライドにテキストはありません | 이 슬라이드에 텍스트가 없습니다 | Bu slaytda metin içeriği yok |
-| `ppt.viaLibreOffice` | via LibreOffice | via LibreOffice | via LibreOffice | via LibreOffice | via LibreOffice | via LibreOffice |
+| Key                  | en-US                                 | zh-CN                            | zh-TW                            | ja-JP                                          | ko-KR                            | tr-TR                                   |
+| -------------------- | ------------------------------------- | -------------------------------- | -------------------------------- | ---------------------------------------------- | -------------------------------- | --------------------------------------- |
+| `ppt.loading`        | Loading presentation...               | 正在加载演示文稿...              | 正在載入簡報...                  | プレゼンテーションを読み込み中...              | 프레젠테이션 로딩 중...          | Sunum yükleniyor...                     |
+| `ppt.converting`     | Converting with LibreOffice...        | 正在通过 LibreOffice 转换...     | 正在透過 LibreOffice 轉換...     | LibreOffice で変換中...                        | LibreOffice로 변환 중...         | LibreOffice ile dönüştürülüyor...       |
+| `ppt.fallbackHint`   | Basic preview (LibreOffice not found) | 基础预览（未检测到 LibreOffice） | 基本預覽（未偵測到 LibreOffice） | 基本プレビュー（LibreOffice が見つかりません） | 기본 미리보기 (LibreOffice 없음) | Temel önizleme (LibreOffice bulunamadı) |
+| `ppt.slideCount`     | `{{current}} / {{total}}`             | `{{current}} / {{total}}`        | `{{current}} / {{total}}`        | `{{current}} / {{total}}`                      | `{{current}} / {{total}}`        | `{{current}} / {{total}}`               |
+| `ppt.prevSlide`      | Previous                              | 上一张                           | 上一張                           | 前へ                                           | 이전                             | Önceki                                  |
+| `ppt.nextSlide`      | Next                                  | 下一张                           | 下一張                           | 次へ                                           | 다음                             | Sonraki                                 |
+| `ppt.noContent`      | This slide has no text content        | 此幻灯片无文字内容               | 此投影片無文字內容               | このスライドにテキストはありません             | 이 슬라이드에 텍스트가 없습니다  | Bu slaytda metin içeriği yok            |
+| `ppt.viaLibreOffice` | via LibreOffice                       | via LibreOffice                  | via LibreOffice                  | via LibreOffice                                | via LibreOffice                  | via LibreOffice                         |
 
 ---
 
 ## Error Handling
 
-| Scenario | Behavior |
-|----------|----------|
-| LibreOffice not found | Silently fall back to ppt-json; show `ppt.fallbackHint` badge |
+| Scenario                                         | Behavior                                                      |
+| ------------------------------------------------ | ------------------------------------------------------------- |
+| LibreOffice not found                            | Silently fall back to ppt-json; show `ppt.fallbackHint` badge |
 | LibreOffice found but conversion fails/times out | Silently fall back to ppt-json; show `ppt.fallbackHint` badge |
-| ppt-json parsing fails | Show error state + Arco Button "Open in system app" |
-| Slide has no title or body text | Show `ppt.noContent` placeholder in slide card |
-| filePath is undefined | Show `preview.errors.missingFilePath` |
+| ppt-json parsing fails                           | Show error state + Arco Button "Open in system app"           |
+| Slide has no title or body text                  | Show `ppt.noContent` placeholder in slide card                |
+| filePath is undefined                            | Show `preview.errors.missingFilePath`                         |
 
 ---
 
@@ -250,19 +256,19 @@ Add to `preview.json` in **all six locale directories** (`en-US`, `zh-CN`, `zh-T
 
 ## File Change Summary
 
-| File | Change |
-|------|--------|
-| `src/process/utils/conversion/libreofficeUtils.ts` | New (new sub-directory) |
-| `src/process/utils/conversion/previewUtils.ts` | Moved from `src/process/utils/previewUtils.ts` |
-| `src/process/services/conversionService.ts` | Add `pptToPdf`, fix `pptToJson`, track created temp files |
-| `src/process/bridge/documentBridge.ts` | Add `ppt-pdf` case, add before-quit cleanup handler |
-| `src/common/types/conversion.ts` | Update `PPTSlideData`, `DocumentConversionTarget`, `DocumentConversionResponse` union |
-| `src/renderer/pages/conversation/Preview/components/viewers/PPTViewer.tsx` | New |
-| `src/renderer/pages/conversation/Preview/components/viewers/index.ts` | Export PPTViewer |
-| `src/renderer/pages/conversation/Preview/components/viewers/OfficeDocViewer.tsx` | Route `docType === 'ppt'` to PPTViewer |
-| `src/renderer/services/i18n/locales/en-US/preview.json` | Add `ppt.*` keys |
-| `src/renderer/services/i18n/locales/zh-CN/preview.json` | Add `ppt.*` keys |
-| `src/renderer/services/i18n/locales/zh-TW/preview.json` | Add `ppt.*` keys |
-| `src/renderer/services/i18n/locales/ja-JP/preview.json` | Add `ppt.*` keys |
-| `src/renderer/services/i18n/locales/ko-KR/preview.json` | Add `ppt.*` keys |
-| `src/renderer/services/i18n/locales/tr-TR/preview.json` | Add `ppt.*` keys |
+| File                                                                             | Change                                                                                |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `src/process/utils/conversion/libreofficeUtils.ts`                               | New (new sub-directory)                                                               |
+| `src/process/utils/conversion/previewUtils.ts`                                   | Moved from `src/process/utils/previewUtils.ts`                                        |
+| `src/process/services/conversionService.ts`                                      | Add `pptToPdf`, fix `pptToJson`, track created temp files                             |
+| `src/process/bridge/documentBridge.ts`                                           | Add `ppt-pdf` case, add before-quit cleanup handler                                   |
+| `src/common/types/conversion.ts`                                                 | Update `PPTSlideData`, `DocumentConversionTarget`, `DocumentConversionResponse` union |
+| `src/renderer/pages/conversation/Preview/components/viewers/PPTViewer.tsx`       | New                                                                                   |
+| `src/renderer/pages/conversation/Preview/components/viewers/index.ts`            | Export PPTViewer                                                                      |
+| `src/renderer/pages/conversation/Preview/components/viewers/OfficeDocViewer.tsx` | Route `docType === 'ppt'` to PPTViewer                                                |
+| `src/renderer/services/i18n/locales/en-US/preview.json`                          | Add `ppt.*` keys                                                                      |
+| `src/renderer/services/i18n/locales/zh-CN/preview.json`                          | Add `ppt.*` keys                                                                      |
+| `src/renderer/services/i18n/locales/zh-TW/preview.json`                          | Add `ppt.*` keys                                                                      |
+| `src/renderer/services/i18n/locales/ja-JP/preview.json`                          | Add `ppt.*` keys                                                                      |
+| `src/renderer/services/i18n/locales/ko-KR/preview.json`                          | Add `ppt.*` keys                                                                      |
+| `src/renderer/services/i18n/locales/tr-TR/preview.json`                          | Add `ppt.*` keys                                                                      |

@@ -12,13 +12,13 @@
  * Read-only preview components for displaying various file types
  */
 
-export { default as CodeViewer } from "./CodeViewer";
-export { default as DiffViewer } from "./DiffViewer";
-export { default as MarkdownViewer } from "./MarkdownViewer";
-export { default as HTMLViewer } from "./HTMLViewer";
-export { default as PDFViewer } from "./PDFViewer";
-export { default as ExcelViewer } from "./office/ExcelViewer";
-export { default as OfficeDocViewer } from "./office/OfficeDocViewer";
-export { default as PPTViewer } from "./office/PPTViewer";
-export { default as ImageViewer } from "./ImageViewer";
-export { default as URLViewer } from "./URLViewer";
+export { default as CodeViewer } from './CodeViewer';
+export { default as DiffViewer } from './DiffViewer';
+export { default as MarkdownViewer } from './MarkdownViewer';
+export { default as HTMLViewer } from './HTMLViewer';
+export { default as PDFViewer } from './PDFViewer';
+export { default as ExcelViewer } from './office/ExcelViewer';
+export { default as OfficeDocViewer } from './office/OfficeDocViewer';
+export { default as PPTViewer } from './office/PPTViewer';
+export { default as ImageViewer } from './ImageViewer';
+export { default as URLViewer } from './URLViewer';

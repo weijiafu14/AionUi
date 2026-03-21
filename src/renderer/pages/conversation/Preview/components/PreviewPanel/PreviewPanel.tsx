@@ -13,14 +13,14 @@ import { useResizableSplit } from '@/renderer/hooks/ui/useResizableSplit';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import CodePreview from '../viewers/CodeViewer';
 import DiffPreview from '../viewers/DiffViewer';
-import ExcelPreview from '../viewers/ExcelViewer';
+import ExcelPreview from '../viewers/office/ExcelViewer';
 import HTMLEditor from '../editors/HTMLEditor';
 import HTMLRenderer from '../renderers/HTMLRenderer';
 import ImagePreview from '../viewers/ImageViewer';
 import MarkdownEditor from '../editors/MarkdownEditor';
 import MarkdownPreview from '../viewers/MarkdownViewer';
 import PDFPreview from '../viewers/PDFViewer';
-import OfficeDocPreview from '../viewers/OfficeDocViewer';
+import OfficeDocPreview from '../viewers/office/OfficeDocViewer';
 import TextEditor from '../editors/TextEditor';
 import URLViewer from '../viewers/URLViewer';
 import {
@@ -76,10 +76,18 @@ const PreviewPanel: React.FC = () => {
 
   // 确认对话框状态 / Confirmation dialog states
   const [showExitConfirm, setShowExitConfirm] = useState(false);
-  const [closeTabConfirm, setCloseTabConfirm] = useState<CloseTabConfirmState>({ show: false, tabId: null });
+  const [closeTabConfirm, setCloseTabConfirm] = useState<CloseTabConfirmState>({
+    show: false,
+    tabId: null,
+  });
 
   // 右键菜单状态 / Context menu state
-  const [contextMenu, setContextMenu] = useState<ContextMenuState>({ show: false, x: 0, y: 0, tabId: null });
+  const [contextMenu, setContextMenu] = useState<ContextMenuState>({
+    show: false,
+    x: 0,
+    y: 0,
+    tabId: null,
+  });
 
   // 容器引用 / Container refs
   const editorContainerRef = useRef<HTMLDivElement>(null);
@@ -311,7 +319,11 @@ const PreviewPanel: React.FC = () => {
       if (contentType === 'image') {
         // Pure base64 image (no file path on disk)
         if (!content) {
-          messageApi.error(t('messages.downloadFailed', { defaultValue: 'Failed to download' }));
+          messageApi.error(
+            t('messages.downloadFailed', {
+              defaultValue: 'Failed to download',
+            })
+          );
           return;
         }
         const blob = await fetch(content).then((res) => res.blob());
@@ -431,7 +443,9 @@ const PreviewPanel: React.FC = () => {
                 />
               </div>
               {/* 拖动分割线 / Drag handle */}
-              {createDragHandle({ className: 'absolute right-0 top-0 bottom-0' })}
+              {createDragHandle({
+                className: 'absolute right-0 top-0 bottom-0',
+              })}
             </div>
 
             {/* 右侧：预览 / Right: Preview */}
@@ -503,7 +517,9 @@ const PreviewPanel: React.FC = () => {
                 />
               </div>
               {/* 拖动分割线 / Drag handle */}
-              {createDragHandle({ className: 'absolute right-0 top-0 bottom-0' })}
+              {createDragHandle({
+                className: 'absolute right-0 top-0 bottom-0',
+              })}
             </div>
 
             {/* 右侧：预览 / Right: Preview */}
@@ -577,7 +593,9 @@ const PreviewPanel: React.FC = () => {
                 <TextEditor value={content} onChange={updateContent} />
               </div>
               {/* 拖动分割线 / Drag handle */}
-              {createDragHandle({ className: 'absolute right-0 top-0 bottom-0' })}
+              {createDragHandle({
+                className: 'absolute right-0 top-0 bottom-0',
+              })}
             </div>
 
             {/* 右侧：预览 / Right: Preview */}

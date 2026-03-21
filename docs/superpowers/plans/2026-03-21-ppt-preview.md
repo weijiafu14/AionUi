@@ -12,47 +12,51 @@
 
 ## File Map
 
-| File | Action | Responsibility |
-|------|--------|---------------|
-| `src/common/types/conversion.ts` | Modify | Structured `PPTSlideData`, add `'ppt-pdf'` target and response type |
-| `src/process/utils/conversion/` | Create dir | New sub-directory to stay under 10-child limit |
-| `src/process/utils/conversion/libreofficeUtils.ts` | Create | Detect LibreOffice binary; cached |
-| `src/process/utils/conversion/previewUtils.ts` | Move | From `src/process/utils/previewUtils.ts`; update 3 importers |
-| `src/process/services/conversionService.ts` | Modify | Fix `pptToJson`, add `pptToPdf`, track temp PDFs for cleanup |
-| `src/process/bridge/documentBridge.ts` | Modify | Add `ppt-pdf` IPC case; register before-quit cleanup |
-| `src/renderer/pages/conversation/Preview/components/viewers/office/` | Create dir | Office viewer sub-directory |
-| `src/renderer/pages/conversation/Preview/components/viewers/office/PPTViewer.tsx` | Create | Two-path PPT viewer component |
-| `src/renderer/pages/conversation/Preview/components/viewers/office/ExcelViewer.tsx` | Move | From `viewers/ExcelViewer.tsx` |
-| `src/renderer/pages/conversation/Preview/components/viewers/office/OfficeDocViewer.tsx` | Move | From `viewers/OfficeDocViewer.tsx`; route ppt to PPTViewer |
-| `src/renderer/pages/conversation/Preview/components/viewers/index.ts` | Modify | Re-export from new office/ paths + add PPTViewer |
-| `src/renderer/services/i18n/locales/*/preview.json` | Modify | Add `ppt` nested object (6 locales) |
-| `tests/unit/process/utils/conversion/libreofficeUtils.test.ts` | Create | Unit tests for binary detection |
-| `tests/unit/process/services/conversionService.ppt.test.ts` | Create | Unit tests for pptToJson and pptToPdf |
-| `tests/unit/renderer/PPTViewer.dom.test.tsx` | Create | Component tests for PPTViewer |
+| File                                                                                    | Action     | Responsibility                                                      |
+| --------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------- |
+| `src/common/types/conversion.ts`                                                        | Modify     | Structured `PPTSlideData`, add `'ppt-pdf'` target and response type |
+| `src/process/utils/conversion/`                                                         | Create dir | New sub-directory to stay under 10-child limit                      |
+| `src/process/utils/conversion/libreofficeUtils.ts`                                      | Create     | Detect LibreOffice binary; cached                                   |
+| `src/process/utils/conversion/previewUtils.ts`                                          | Move       | From `src/process/utils/previewUtils.ts`; update 3 importers        |
+| `src/process/services/conversionService.ts`                                             | Modify     | Fix `pptToJson`, add `pptToPdf`, track temp PDFs for cleanup        |
+| `src/process/bridge/documentBridge.ts`                                                  | Modify     | Add `ppt-pdf` IPC case; register before-quit cleanup                |
+| `src/renderer/pages/conversation/Preview/components/viewers/office/`                    | Create dir | Office viewer sub-directory                                         |
+| `src/renderer/pages/conversation/Preview/components/viewers/office/PPTViewer.tsx`       | Create     | Two-path PPT viewer component                                       |
+| `src/renderer/pages/conversation/Preview/components/viewers/office/ExcelViewer.tsx`     | Move       | From `viewers/ExcelViewer.tsx`                                      |
+| `src/renderer/pages/conversation/Preview/components/viewers/office/OfficeDocViewer.tsx` | Move       | From `viewers/OfficeDocViewer.tsx`; route ppt to PPTViewer          |
+| `src/renderer/pages/conversation/Preview/components/viewers/index.ts`                   | Modify     | Re-export from new office/ paths + add PPTViewer                    |
+| `src/renderer/services/i18n/locales/*/preview.json`                                     | Modify     | Add `ppt` nested object (6 locales)                                 |
+| `tests/unit/process/utils/conversion/libreofficeUtils.test.ts`                          | Create     | Unit tests for binary detection                                     |
+| `tests/unit/process/services/conversionService.ppt.test.ts`                             | Create     | Unit tests for pptToJson and pptToPdf                               |
+| `tests/unit/renderer/PPTViewer.dom.test.tsx`                                            | Create     | Component tests for PPTViewer                                       |
 
 ---
 
 ## Task 1: Update Shared Types
 
 **Files:**
+
 - Modify: `src/common/types/conversion.ts`
 
 - [ ] **Step 1: Replace `PPTSlideData.content: any` with structured fields**
 
 In `src/common/types/conversion.ts`, replace:
+
 ```ts
 export interface PPTSlideData {
   slideNumber: number;
   content: any;
 }
 ```
+
 With:
+
 ```ts
 export interface PPTSlideData {
   slideNumber: number;
   title: string;
-  texts: string[];   // body text paragraphs, excluding title
-  images: string[];  // data URLs of embedded images
+  texts: string[]; // body text paragraphs, excluding title
+  images: string[]; // data URLs of embedded images
 }
 ```
 
@@ -65,6 +69,7 @@ export type DocumentConversionTarget = 'markdown' | 'excel-json' | 'ppt-json' | 
 - [ ] **Step 3: Add `ppt-pdf` to `DocumentConversionResponse` union**
 
 In the `DocumentConversionResponse` type, add:
+
 ```ts
 | { to: 'ppt-pdf'; result: ConversionResult<string> }
 // ConversionResult<string>.data is the absolute path to the generated PDF
@@ -75,6 +80,7 @@ In the `DocumentConversionResponse` type, add:
 ```bash
 bunx tsc --noEmit
 ```
+
 Expected: no errors related to `PPTSlideData`, `DocumentConversionTarget`, or `DocumentConversionResponse`.
 
 - [ ] **Step 5: Commit**
@@ -89,6 +95,7 @@ git commit -m "feat(ppt-preview): update conversion types for structured PPT dat
 ## Task 2: Create `conversion/` Sub-directory and Move `previewUtils.ts`
 
 **Files:**
+
 - Create: `src/process/utils/conversion/` (directory)
 - Move: `src/process/utils/previewUtils.ts` → `src/process/utils/conversion/previewUtils.ts`
 - Modify (3 files): `src/process/task/CodexAgentManager.ts`, `GeminiAgentManager.ts`, `AcpAgentManager.ts`
@@ -103,15 +110,19 @@ cp src/process/utils/previewUtils.ts src/process/utils/conversion/previewUtils.t
 - [ ] **Step 2: Update the 3 importers**
 
 In each of these files, change:
+
 ```ts
 import { handlePreviewOpenEvent } from '@process/utils/previewUtils';
 ```
+
 To:
+
 ```ts
 import { handlePreviewOpenEvent } from '@process/utils/conversion/previewUtils';
 ```
 
 Files to update:
+
 - `src/process/task/CodexAgentManager.ts:32`
 - `src/process/task/GeminiAgentManager.ts:25`
 - `src/process/task/AcpAgentManager.ts:22`
@@ -127,6 +138,7 @@ rm src/process/utils/previewUtils.ts
 ```bash
 bunx tsc --noEmit
 ```
+
 Expected: no import errors.
 
 - [ ] **Step 5: Commit**
@@ -142,12 +154,14 @@ git commit -m "refactor(process): move previewUtils into utils/conversion/ subdi
 ## Task 3: LibreOffice Detection Utility
 
 **Files:**
+
 - Create: `src/process/utils/conversion/libreofficeUtils.ts`
 - Create: `tests/unit/process/utils/conversion/libreofficeUtils.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
 Create `tests/unit/process/utils/conversion/libreofficeUtils.test.ts`:
+
 ```ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import fs from 'fs/promises';
@@ -190,28 +204,23 @@ describe('findLibreOfficeBin', () => {
 ```bash
 bun run test tests/unit/process/utils/conversion/libreofficeUtils.test.ts
 ```
+
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Create `libreofficeUtils.ts`**
 
 Create `src/process/utils/conversion/libreofficeUtils.ts`:
+
 ```ts
 import fs from 'fs/promises';
 
 const LIBRE_OFFICE_PATHS: Partial<Record<NodeJS.Platform, string[]>> = {
-  darwin: [
-    '/Applications/LibreOffice.app/Contents/MacOS/soffice',
-    '/usr/local/bin/soffice',
-  ],
+  darwin: ['/Applications/LibreOffice.app/Contents/MacOS/soffice', '/usr/local/bin/soffice'],
   win32: [
     'C:\\Program Files\\LibreOffice\\program\\soffice.exe',
     'C:\\Program Files (x86)\\LibreOffice\\program\\soffice.exe',
   ],
-  linux: [
-    '/usr/bin/soffice',
-    '/usr/local/bin/soffice',
-    '/snap/bin/libreoffice',
-  ],
+  linux: ['/usr/bin/soffice', '/usr/local/bin/soffice', '/snap/bin/libreoffice'],
 };
 
 let cachedBin: string | null | undefined = undefined;
@@ -248,6 +257,7 @@ export function _resetLibreOfficeBinCache(): void {
 ```bash
 bun run test tests/unit/process/utils/conversion/libreofficeUtils.test.ts
 ```
+
 Expected: PASS.
 
 - [ ] **Step 5: Verify TypeScript**
@@ -269,12 +279,14 @@ git commit -m "feat(ppt-preview): add LibreOffice binary detection utility"
 ## Task 4: Fix `pptToJson` and Add `pptToPdf` to ConversionService
 
 **Files:**
+
 - Modify: `src/process/services/conversionService.ts`
 - Create: `tests/unit/process/services/conversionService.ppt.test.ts`
 
 - [ ] **Step 1: Write the failing tests**
 
 Create `tests/unit/process/services/conversionService.ppt.test.ts`:
+
 ```ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import path from 'path';
@@ -353,6 +365,7 @@ describe('conversionService.pptToPdf', () => {
 ```bash
 bun run test tests/unit/process/services/conversionService.ppt.test.ts
 ```
+
 Expected: FAIL.
 
 - [ ] **Step 3: Fix `pptToJson` in `conversionService.ts`**
@@ -400,6 +413,7 @@ public async pptToJson(filePath: string): Promise<ConversionResult<PPTJsonData>>
 ```
 
 Add these private helpers to `ConversionService` class:
+
 ```ts
 private extractTextNodes(node: unknown): string[] {
   if (typeof node !== 'object' || node === null) return [];
@@ -473,6 +487,7 @@ private extractSlideImages(json: Record<string, unknown>, relsKey: string): stri
 ```
 
 Also update the `extractTextNodes` / `extractTitle` calls in `pptToJson` to use `this.`:
+
 ```ts
 const allTexts = this.extractTextNodes(slideXml);
 const title = this.extractTitle(slideXml) ?? allTexts[0] ?? '';
@@ -481,6 +496,7 @@ const title = this.extractTitle(slideXml) ?? allTexts[0] ?? '';
 - [ ] **Step 4: Add `pptToPdf` method to `ConversionService`**
 
 Add these imports at the top of `conversionService.ts` (if not already present):
+
 ```ts
 import crypto from 'crypto';
 import os from 'os';
@@ -490,11 +506,13 @@ import { safeExecFile } from '../utils/safeExec';
 ```
 
 Add this in-memory set near the top of the class:
+
 ```ts
 private readonly createdTempPdfs = new Set<string>();
 ```
 
 Add the method:
+
 ```ts
 public async pptToPdf(filePath: string): Promise<ConversionResult<string>> {
   try {
@@ -545,6 +563,7 @@ public async cleanupTempPdfs(): Promise<void> {
 ```bash
 bun run test tests/unit/process/services/conversionService.ppt.test.ts
 ```
+
 Expected: PASS.
 
 - [ ] **Step 6: Verify TypeScript**
@@ -566,11 +585,13 @@ git commit -m "feat(ppt-preview): fix pptToJson parsing and add pptToPdf via Lib
 ## Task 5: Update `documentBridge` — Add `ppt-pdf` and Before-Quit Cleanup
 
 **Files:**
+
 - Modify: `src/process/bridge/documentBridge.ts`
 
 - [ ] **Step 1: Add `ppt-pdf` case to the IPC switch**
 
 In `src/process/bridge/documentBridge.ts`, inside `initDocumentBridge()`, add after the `ppt-json` case:
+
 ```ts
 case 'ppt-pdf': {
   if (!ensureExtension(filePath, PPT_EXTENSIONS)) {
@@ -584,6 +605,7 @@ case 'ppt-pdf': {
 - [ ] **Step 2: Register before-quit cleanup**
 
 At the end of `initDocumentBridge()`, add:
+
 ```ts
 import { app } from 'electron';
 
@@ -600,6 +622,7 @@ app.on('before-quit', () => {
 ```bash
 bunx tsc --noEmit
 ```
+
 Expected: no errors.
 
 - [ ] **Step 4: Commit**
@@ -614,6 +637,7 @@ git commit -m "feat(ppt-preview): add ppt-pdf IPC handler and before-quit PDF cl
 ## Task 6: Reorganize `viewers/` Directory — Create `office/` Sub-directory
 
 **Files:**
+
 - Create: `src/renderer/pages/conversation/Preview/components/viewers/office/`
 - Move: `ExcelViewer.tsx`, `OfficeDocViewer.tsx`
 - Modify: `viewers/index.ts`
@@ -638,6 +662,7 @@ rm src/renderer/pages/conversation/Preview/components/viewers/OfficeDocViewer.ts
 - [ ] **Step 3: Update `viewers/index.ts` to point to the new paths**
 
 Replace the current `ExcelViewer` and `OfficeDocViewer` export lines:
+
 ```ts
 // Before:
 export { default as ExcelViewer } from './ExcelViewer';
@@ -653,6 +678,7 @@ export { default as OfficeDocViewer } from './office/OfficeDocViewer';
 ```bash
 bunx tsc --noEmit && bun run lint:fix
 ```
+
 Expected: no errors.
 
 - [ ] **Step 5: Commit**
@@ -667,6 +693,7 @@ git commit -m "refactor(preview): move office viewers into office/ subdirectory"
 ## Task 7: Add i18n Keys for All 6 Locales
 
 **Files:**
+
 - Modify: `src/renderer/services/i18n/locales/{en-US,zh-CN,zh-TW,ja-JP,ko-KR,tr-TR}/preview.json`
 
 - [ ] **Step 1: Add `ppt` block to each locale's `preview.json`**
@@ -674,6 +701,7 @@ git commit -m "refactor(preview): move office viewers into office/ subdirectory"
 Add the following block before the final `}` in each file (after the existing `html` block):
 
 **en-US:**
+
 ```json
   "ppt": {
     "loading": "Loading presentation...",
@@ -688,6 +716,7 @@ Add the following block before the final `}` in each file (after the existing `h
 ```
 
 **zh-CN:**
+
 ```json
   "ppt": {
     "loading": "正在加载演示文稿...",
@@ -702,6 +731,7 @@ Add the following block before the final `}` in each file (after the existing `h
 ```
 
 **zh-TW:**
+
 ```json
   "ppt": {
     "loading": "正在載入簡報...",
@@ -716,6 +746,7 @@ Add the following block before the final `}` in each file (after the existing `h
 ```
 
 **ja-JP:**
+
 ```json
   "ppt": {
     "loading": "プレゼンテーションを読み込み中...",
@@ -730,6 +761,7 @@ Add the following block before the final `}` in each file (after the existing `h
 ```
 
 **ko-KR:**
+
 ```json
   "ppt": {
     "loading": "프레젠테이션 로딩 중...",
@@ -744,6 +776,7 @@ Add the following block before the final `}` in each file (after the existing `h
 ```
 
 **tr-TR:**
+
 ```json
   "ppt": {
     "loading": "Sunum yükleniyor...",
@@ -764,6 +797,7 @@ for f in src/renderer/services/i18n/locales/*/preview.json; do
   node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" && echo "$f OK"
 done
 ```
+
 Expected: all 6 files report OK.
 
 - [ ] **Step 3: Commit**
@@ -778,12 +812,14 @@ git commit -m "feat(ppt-preview): add ppt i18n keys for all 6 locales"
 ## Task 8: Create `PPTViewer` Component
 
 **Files:**
+
 - Create: `src/renderer/pages/conversation/Preview/components/viewers/office/PPTViewer.tsx`
 - Create: `tests/unit/renderer/PPTViewer.dom.test.tsx`
 
 - [ ] **Step 1: Write the failing component tests**
 
 Create `tests/unit/renderer/PPTViewer.dom.test.tsx`:
+
 ```tsx
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
@@ -808,7 +844,7 @@ vi.mock('react-i18next', () => ({
 
 // Mock PDFViewer
 vi.mock('@renderer/pages/conversation/Preview/components/viewers/PDFViewer', () => ({
-  default: ({ filePath }: { filePath: string }) => <div data-testid="pdf-viewer">{filePath}</div>,
+  default: ({ filePath }: { filePath: string }) => <div data-testid='pdf-viewer'>{filePath}</div>,
 }));
 
 import { ipcBridge } from '@/common';
@@ -828,7 +864,7 @@ describe('PPTViewer', () => {
       result: { success: true, data: '/tmp/test.pdf' },
     });
 
-    render(<PPTViewer filePath="/test.pptx" />);
+    render(<PPTViewer filePath='/test.pptx' />);
 
     await waitFor(() => expect(screen.getByTestId('pdf-viewer')).toBeTruthy());
     expect(screen.getByText('/tmp/test.pdf')).toBeTruthy();
@@ -839,7 +875,7 @@ describe('PPTViewer', () => {
       .mockResolvedValueOnce({ to: 'ppt-pdf', result: { success: false, error: 'LIBRE_OFFICE_NOT_FOUND' } })
       .mockResolvedValueOnce({ to: 'ppt-json', result: { success: true, data: { slides: mockSlides } } });
 
-    render(<PPTViewer filePath="/test.pptx" />);
+    render(<PPTViewer filePath='/test.pptx' />);
 
     await waitFor(() => expect(screen.getByText('Slide One')).toBeTruthy());
     // Shows fallback hint badge
@@ -851,7 +887,7 @@ describe('PPTViewer', () => {
       .mockResolvedValueOnce({ to: 'ppt-pdf', result: { success: false, error: 'LIBRE_OFFICE_NOT_FOUND' } })
       .mockResolvedValueOnce({ to: 'ppt-json', result: { success: true, data: { slides: mockSlides } } });
 
-    render(<PPTViewer filePath="/test.pptx" />);
+    render(<PPTViewer filePath='/test.pptx' />);
     await waitFor(() => screen.getByText('Slide One'));
 
     fireEvent.keyDown(window, { key: 'ArrowRight' });
@@ -865,11 +901,13 @@ describe('PPTViewer', () => {
 ```bash
 bun run test tests/unit/renderer/PPTViewer.dom.test.tsx
 ```
+
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Create `PPTViewer.tsx`**
 
 Create `src/renderer/pages/conversation/Preview/components/viewers/office/PPTViewer.tsx`:
+
 ```tsx
 import { ipcBridge } from '@/common';
 import type { PPTSlideData } from '@/common/types/conversion';
@@ -898,7 +936,9 @@ const PPTViewer: React.FC<PPTViewerProps> = ({ filePath, hideToolbar = false }) 
   const toolbarExtrasContext = usePreviewToolbarExtras();
   const usePortalToolbar = Boolean(toolbarExtrasContext) && !hideToolbar;
   const messageApiRef = useRef(messageApi);
-  useEffect(() => { messageApiRef.current = messageApi; }, [messageApi]);
+  useEffect(() => {
+    messageApiRef.current = messageApi;
+  }, [messageApi]);
 
   // Load: try ppt-pdf, fall back to ppt-json on any failure
   useEffect(() => {
@@ -958,9 +998,7 @@ const PPTViewer: React.FC<PPTViewerProps> = ({ filePath, hideToolbar = false }) 
         );
       } else if (e.key === 'ArrowLeft') {
         setState((prev) =>
-          prev.status === 'slides' && prev.currentIndex > 0
-            ? { ...prev, currentIndex: prev.currentIndex - 1 }
-            : prev
+          prev.status === 'slides' && prev.currentIndex > 0 ? { ...prev, currentIndex: prev.currentIndex - 1 } : prev
         );
       }
     };
@@ -973,10 +1011,7 @@ const PPTViewer: React.FC<PPTViewerProps> = ({ filePath, hideToolbar = false }) 
     if (!usePortalToolbar || !toolbarExtrasContext) return;
     if (state.status !== 'slides' && state.status !== 'pdf') return;
 
-    const badge =
-      state.status === 'pdf'
-        ? t('preview.ppt.viaLibreOffice')
-        : t('preview.ppt.fallbackHint');
+    const badge = state.status === 'pdf' ? t('preview.ppt.viaLibreOffice') : t('preview.ppt.fallbackHint');
 
     toolbarExtrasContext.setExtras({
       left: <span className='text-11px text-t-tertiary'>{badge}</span>,
@@ -1066,9 +1101,7 @@ const PPTViewer: React.FC<PPTViewerProps> = ({ filePath, hideToolbar = false }) 
         >
           <div className='flex-1 overflow-y-auto p-24px'>
             {slide.title && (
-              <div className='text-18px font-semibold text-t-primary mb-12px leading-snug'>
-                {slide.title}
-              </div>
+              <div className='text-18px font-semibold text-t-primary mb-12px leading-snug'>{slide.title}</div>
             )}
             {slide.texts.map((text, i) => (
               <p key={i} className='text-14px text-t-secondary leading-relaxed mb-6px'>
@@ -1081,7 +1114,7 @@ const PPTViewer: React.FC<PPTViewerProps> = ({ filePath, hideToolbar = false }) 
                   <img
                     key={i}
                     src={src}
-                    alt=""
+                    alt=''
                     className='object-contain rd-4px'
                     style={{ maxHeight: '200px', maxWidth: '48%' }}
                   />
@@ -1100,7 +1133,9 @@ const PPTViewer: React.FC<PPTViewerProps> = ({ filePath, hideToolbar = false }) 
         <Button
           size='small'
           disabled={currentIndex === 0}
-          onClick={() => setState((prev) => prev.status === 'slides' ? { ...prev, currentIndex: prev.currentIndex - 1 } : prev)}
+          onClick={() =>
+            setState((prev) => (prev.status === 'slides' ? { ...prev, currentIndex: prev.currentIndex - 1 } : prev))
+          }
         >
           {t('preview.ppt.prevSlide')}
         </Button>
@@ -1110,7 +1145,9 @@ const PPTViewer: React.FC<PPTViewerProps> = ({ filePath, hideToolbar = false }) 
         <Button
           size='small'
           disabled={currentIndex === total - 1}
-          onClick={() => setState((prev) => prev.status === 'slides' ? { ...prev, currentIndex: prev.currentIndex + 1 } : prev)}
+          onClick={() =>
+            setState((prev) => (prev.status === 'slides' ? { ...prev, currentIndex: prev.currentIndex + 1 } : prev))
+          }
         >
           {t('preview.ppt.nextSlide')}
         </Button>
@@ -1127,6 +1164,7 @@ export default PPTViewer;
 ```bash
 bun run test tests/unit/renderer/PPTViewer.dom.test.tsx
 ```
+
 Expected: PASS.
 
 - [ ] **Step 5: Lint and type check**
@@ -1148,17 +1186,20 @@ git commit -m "feat(ppt-preview): add PPTViewer component with LibreOffice PDF a
 ## Task 9: Wire Up — Update `OfficeDocViewer` and `viewers/index.ts`
 
 **Files:**
+
 - Modify: `src/renderer/pages/conversation/Preview/components/viewers/office/OfficeDocViewer.tsx`
 - Modify: `src/renderer/pages/conversation/Preview/components/viewers/index.ts`
 
 - [ ] **Step 1: Update `OfficeDocViewer.tsx` — replace ppt placeholder with `PPTViewer`**
 
 In `src/renderer/pages/conversation/Preview/components/viewers/office/OfficeDocViewer.tsx`, add the import at the top:
+
 ```tsx
 import PPTViewer from './PPTViewer';
 ```
 
 Then replace the entire `if (docType === 'ppt')` block (lines 151–175) with:
+
 ```tsx
 if (docType === 'ppt') {
   return <PPTViewer filePath={filePath} hideToolbar={hideToolbar} />;
@@ -1170,6 +1211,7 @@ Also remove the now-unused `MarkdownPreview` import from `OfficeDocViewer.tsx` i
 - [ ] **Step 2: Export `PPTViewer` from `viewers/index.ts`**
 
 Add to `src/renderer/pages/conversation/Preview/components/viewers/index.ts`:
+
 ```ts
 export { default as PPTViewer } from './office/PPTViewer';
 ```
@@ -1179,6 +1221,7 @@ export { default as PPTViewer } from './office/PPTViewer';
 ```bash
 bun run test
 ```
+
 Expected: all tests pass.
 
 - [ ] **Step 4: Lint and type check**
