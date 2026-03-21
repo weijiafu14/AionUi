@@ -260,19 +260,6 @@ class ConversionService {
           outDir,
           path.basename(filePath, path.extname(filePath)) + ".pdf",
         );
-        console.log(
-          "[pptToPdf] running:",
-          bin,
-          "--headless --convert-to pdf --outdir",
-          outDir,
-          filePath,
-        );
-        console.log(
-          "[pptToPdf] expected libreoffice output:",
-          actualPdfPath,
-          "-> will rename to:",
-          pdfPath,
-        );
         const { stdout, stderr } = await safeExecFile(
           bin,
           ["--headless", "--convert-to", "pdf", "--outdir", outDir, filePath],
@@ -280,8 +267,7 @@ class ConversionService {
             timeout: 30_000,
           },
         );
-        console.log("[pptToPdf] stdout:", stdout);
-        if (stderr) console.log("[pptToPdf] stderr:", stderr);
+        if (stderr) console.error("[pptToPdf] stderr:", stderr);
         // Verify LibreOffice produced output before renaming
         try {
           await fs.access(actualPdfPath);

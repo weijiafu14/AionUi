@@ -24,32 +24,19 @@ let cachedBin: string | null | undefined = undefined;
  */
 export async function findLibreOfficeBin(): Promise<string | null> {
   if (cachedBin !== undefined) {
-    console.log("[libreoffice] returning cached result:", cachedBin);
     return cachedBin;
   }
 
   const paths = LIBRE_OFFICE_PATHS[process.platform] ?? [];
-  console.log(
-    "[libreoffice] platform:",
-    process.platform,
-    "checking paths:",
-    paths,
-  );
   for (const p of paths) {
     try {
       await fs.access(p);
-      console.log("[libreoffice] found binary at:", p);
       cachedBin = p;
       return cachedBin;
-    } catch (err) {
-      console.log(
-        "[libreoffice] not found at:",
-        p,
-        (err as NodeJS.ErrnoException).code,
-      );
+    } catch {
+      // not found at this path, try next
     }
   }
-  console.log("[libreoffice] no binary found on this system");
   cachedBin = null;
   return null;
 }
