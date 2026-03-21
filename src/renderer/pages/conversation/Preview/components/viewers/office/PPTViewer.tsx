@@ -5,10 +5,10 @@
  */
 
 import { ipcBridge } from "@/common";
-import { Button } from "@arco-design/web-react";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import PDFViewer from "../PDFViewer";
+import PPTPlaceholder from "./PPTPlaceholder";
 
 interface PPTViewerProps {
   filePath?: string;
@@ -60,15 +60,6 @@ const PPTViewer: React.FC<PPTViewerProps> = ({
     void load();
   }, [filePath, t]);
 
-  const handleOpenInSystem = useCallback(async () => {
-    if (!filePath) return;
-    try {
-      await ipcBridge.shell.openFile.invoke(filePath);
-    } catch {
-      // ignore
-    }
-  }, [filePath]);
-
   if (state.status === "loading") {
     return (
       <div className="flex items-center justify-center h-full">
@@ -96,19 +87,7 @@ const PPTViewer: React.FC<PPTViewerProps> = ({
     );
   }
 
-  // error state: show message + open in system app
-  return (
-    <div className="flex items-center justify-center h-full">
-      <div className="text-center">
-        <div className="text-16px text-t-error mb-8px">{state.message}</div>
-        {filePath && (
-          <Button size="small" onClick={handleOpenInSystem}>
-            {t("preview.openInSystemApp")}
-          </Button>
-        )}
-      </div>
-    </div>
-  );
+  return <PPTPlaceholder filePath={filePath} />;
 };
 
 export default PPTViewer;
