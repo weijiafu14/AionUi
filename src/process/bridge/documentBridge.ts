@@ -15,6 +15,7 @@
  * renderer process conversion needs to the main process conversion service via IPC
  */
 
+import { app } from 'electron';
 import { ipcBridge } from '@/common';
 import type { DocumentConversionTarget } from '@/common/types/conversion';
 import path from 'path';
@@ -97,9 +98,22 @@ export function initDocumentBridge(): void {
         const result = await conversionService.pptToJson(filePath);
         return { to, result };
       }
+      case 'ppt-pdf': {
+        // PowerPoint 演示文稿转 PDF / PowerPoint presentation to PDF
+        if (!ensureExtension(filePath, PPT_EXTENSIONS)) {
+          return unsupportedResult(to, 'Only PowerPoint files can be converted to PDF');
+        }
+        const result = await conversionService.pptToPdf(filePath);
+        return { to, result };
+      }
       default:
         // 不支持的转换格式 / Unsupported conversion format
         return unsupportedResult(to, `Unsupported target format: ${to}`);
     }
+  });
+
+  // Clean up temp PDFs when the app quits normally
+  app.on('before-quit', () => {
+    void conversionService.cleanupTempPdfs();
   });
 }
