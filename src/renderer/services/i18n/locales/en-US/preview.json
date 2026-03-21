@@ -109,6 +109,7 @@
     "prevSlide": "Previous",
     "nextSlide": "Next",
     "noContent": "This slide has no text content",
-    "viaLibreOffice": "via LibreOffice"
+    "viaLibreOffice": "via LibreOffice",
+    "loadFailed": "Failed to load presentation"
   }
 }

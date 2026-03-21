@@ -109,6 +109,7 @@
     "prevSlide": "上一張",
     "nextSlide": "下一張",
     "noContent": "此投影片無文字內容",
-    "viaLibreOffice": "via LibreOffice"
+    "viaLibreOffice": "via LibreOffice",
+    "loadFailed": "載入簡報失敗"
   }
 }

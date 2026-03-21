@@ -109,6 +109,7 @@
     "prevSlide": "上一张",
     "nextSlide": "下一张",
     "noContent": "此幻灯片无文字内容",
-    "viaLibreOffice": "via LibreOffice"
+    "viaLibreOffice": "via LibreOffice",
+    "loadFailed": "加载演示文稿失败"
   }
 }

@@ -109,6 +109,7 @@
     "prevSlide": "이전",
     "nextSlide": "다음",
     "noContent": "이 슬라이드에 텍스트가 없습니다",
-    "viaLibreOffice": "via LibreOffice"
+    "viaLibreOffice": "via LibreOffice",
+    "loadFailed": "프레젠테이션 로딩 실패"
   }
 }

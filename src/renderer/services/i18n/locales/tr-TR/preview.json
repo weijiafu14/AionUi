@@ -109,6 +109,7 @@
     "prevSlide": "Önceki",
     "nextSlide": "Sonraki",
     "noContent": "Bu slaytda metin içeriği yok",
-    "viaLibreOffice": "via LibreOffice"
+    "viaLibreOffice": "via LibreOffice",
+    "loadFailed": "Sunum yüklenemedi"
   }
 }

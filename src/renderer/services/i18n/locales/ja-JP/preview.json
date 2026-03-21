@@ -109,6 +109,7 @@
     "prevSlide": "前へ",
     "nextSlide": "次へ",
     "noContent": "このスライドにテキストはありません",
-    "viaLibreOffice": "via LibreOffice"
+    "viaLibreOffice": "via LibreOffice",
+    "loadFailed": "プレゼンテーションの読み込みに失敗しました"
   }
 }
